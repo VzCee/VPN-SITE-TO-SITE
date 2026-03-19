@@ -1,0 +1,188 @@
+! ISP 
+
+enable
+configure terminal
+hostname ISP
+
+! Configurando el lado izquierdo (Hacia el FortiGate 1)
+
+interface e0/0
+ip address 23.72.1.1 255.255.255.252
+no shutdown
+exit
+
+! Configurando el lado derecho (Hacia el FortiGate 2)
+interface e0/1
+ip address 23.72.2.1 255.255.255.252
+no shutdown
+exit
+
+end
+write memory
+
+!Fortigate 1 
+
+! Configuración de los puertos (Interfaces)
+
+config system interface
+edit port1
+set mode static
+set ip 23.72.1.2 255.255.255.252
+set allowaccess ping
+next
+    
+edit port2
+set ip 10.20.24.1 255.255.255.0
+set allowaccess ping
+next
+end
+
+! Configuración de la salida a la calle (Ruta estática)
+
+config router static
+edit 1
+set dst 0.0.0.0 0.0.0.0
+set gateway 23.72.1.1
+set device port1
+next
+end
+
+! Fortigate 2
+
+! Configuración de los puertos (Interfaces)
+config system interface
+edit port1
+set mode static
+set ip 23.72.2.2 255.255.255.252
+set allowaccess ping
+next
+    
+edit port2
+set ip 10.23.72.1 255.255.255.0
+set allowaccess ping
+next
+end
+
+! Configuración de la salida a la calle (Ruta estática)
+
+config router static
+edit 1
+set dst 0.0.0.0 0.0.0.0
+set gateway 23.72.2.1
+set device port1
+next
+end
+
+
+
+Fase 1 Fortigate 1
+
+! --- FASE 1 ---
+config vpn ipsec phase1-interface
+edit "VPN-FGT2"
+set interface "port1"
+set remote-gw 23.72.2.2
+set psksecret vpn20242372
+next
+end
+
+! --- FASE 2 ---
+config vpn ipsec phase2-interface
+edit "VPN-FGT2-P2"
+set phase1name "VPN-FGT2"
+set src-subnet 10.20.24.0 255.255.255.0
+set dst-subnet 10.23.72.0 255.255.255.0
+next
+end
+
+
+Fase 1 Fortigate 2
+
+! --- FASE 1 (El saludo) ---
+config vpn ipsec phase1-interface
+edit "VPN-FGT1"
+set interface "port1"
+set remote-gw 23.72.1.2 
+set psksecret 20242372
+next
+end
+
+! --- FASE 2 (El tubo por dentro) ---
+config vpn ipsec phase2-interface
+edit "VPN-FGT1-P2"
+set phase1name "VPN-FGT1"
+set src-subnet 10.23.72.0 255.255.255.0 
+set dst-subnet 10.20.24.0 255.255.255.0 
+next
+end
+
+
+Paso 3: Enrutamiento hacia el Túnel VPN
+
+En el FortiGate 1 (Enviando tráfico a la red 10.23.72.0 por su túnel):
+
+config router static
+edit 2
+set dst 10.23.72.0 255.255.255.0
+set device VPN-FGT2
+next
+end
+
+En el FortiGate 2 (Enviando tráfico a la red 10.20.24.0 por su túnel):
+
+config router static
+edit 2
+set dst 10.20.24.0 255.255.255.0
+set device VPN-FGT1
+next
+end
+
+Paso 4: Políticas de Firewall (Los Permisos)
+
+config firewall policy
+edit 1
+set name "LAN-TO-VPN"
+set srcintf port2
+set dstintf VPN-FGT2
+set action accept
+set srcaddr all
+set dstaddr all
+set schedule always
+set service ALL
+next
+edit 2
+set name "VPN-TO-LAN"
+set srcintf VPN-FGT2
+set dstintf port2
+set action accept
+set srcaddr all
+set dstaddr all
+set schedule always
+set service ALL
+next
+end
+
+En el FortiGate 2:
+
+config firewall policy
+edit 1
+set name "LAN-TO-VPN"
+set srcintf port2
+set dstintf VPN-FGT1
+set action accept
+set srcaddr all
+set dstaddr all
+set schedule always
+set service ALL
+next
+edit 2
+set name "VPN-TO-LAN"
+set srcintf VPN-FGT1
+set dstintf port2
+set action accept
+set srcaddr all
+set dstaddr all
+set schedule always
+set service ALL
+next
+end
