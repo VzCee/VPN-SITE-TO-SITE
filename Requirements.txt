@@ -1,0 +1,21 @@
+Requisitos del Entorno de Simulación# 
+Para la replicación de este escenario de seguridad, se utilizaron los siguientes componentes de software y virtualización:
+
+1. Hipervisor y Emulación
+Plataforma: PNETLab (v6.0+) o EVE-NG Professional/Community Edition.
+
+Recursos asignados: 8GB RAM / 4 vCPUs (mínimo recomendado para fluidez de los nodos).
+
+2. Imágenes de Dispositivos (QEMU/IOL)
+Firewall: Fortinet FortiGate VM64-KVM (v7.x o superior).
+
+Router ISP: Cisco IOL (Inter-Operative Layer) o Cisco IOSv (v15.x).
+
+End-points: VPCS (Virtual PC Simulator) para pruebas de conectividad ligera.
+
+3. Herramientas de Gestión y Diagnóstico
+Acceso Consola: PuTTY, SecureCRT o Terminal nativo de PNETLab.
+
+Captura de Tráfico: Wireshark (opcional, para análisis de paquetes encapsulados).
+
+Navegador Web: Chrome/Firefox (para acceso a la GUI de administración de FortiGate, si aplica).
